@@ -11,7 +11,7 @@ Original file is located at
 
 import json
 
-with open('/content/sample_data/apollo_faq.json') as f:
+with open('apollo_faq.json') as f:
   faq_list = json.load(f)
 
 print((faq_list))
