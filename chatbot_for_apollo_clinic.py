@@ -91,7 +91,7 @@ from langchain_openai import ChatOpenAI
 
 
 llm = ChatOpenAI(
-    openai_api_base="http://18.171.171.212:8080/v1",  # Strip off `/chat/completions`
+    openai_api_base="",  # Strip off `/chat/completions`
     openai_api_key="not-needed",  # Dummy key, required by LangChain
     model_name="llama-3.2-1b-instruct-unsloth.gguf",  # Make sure this matches your server's model name
 )
