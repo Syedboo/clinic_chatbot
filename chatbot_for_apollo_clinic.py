@@ -11,22 +11,14 @@ Original file is located at
 
 import json
 
-with open('apollo_faq.json') as f:
-  faq_list = json.load(f)
+with open("apollo_faq.json", "r", encoding="utf-8") as f:
+    faq_list = json.load(f)
+
+
 
 print((faq_list))
 
-"""Converting the Json file as Langchain compatible Document"""
-
-pip install langchain
-
-pip install -U langchain-community
-
-pip install faiss-cpu
-
-pip install llama-cpp-python
-
-!pip install -U langchain-openai
+#"""Converting the Json file as Langchain compatible Document"""
 
 from langchain.schema import Document
 
@@ -50,7 +42,7 @@ from langchain.vectorstores import FAISS
 
 vector_store = FAISS.from_documents(documents=splits, embedding=embeddings)
 
-"""**Step 2: Define Prompt Template**"""
+#"""**Step 2: Define Prompt Template**"""
 
 from langchain.prompts import PromptTemplate
 
@@ -69,7 +61,7 @@ Answer:"""
 
 prompt = PromptTemplate(template=template, input_variables=['context','question'])
 
-"""**STEP 3: LLM SETUP**"""
+#"""**STEP 3: LLM SETUP**"""
 
 #!pip install -q llama-cpp-python langchain huggingface-hub
 #!apt-get install -y git-lfs
@@ -96,7 +88,7 @@ llm = ChatOpenAI(
     model_name="llama-3.2-1b-instruct-unsloth.gguf",  # Make sure this matches your server's model name
 )
 
-"""**Step 4: Building LLM chain**"""
+#"""**Step 4: Building LLM chain**"""
 
 from langchain.chains import RetrievalQA
 
@@ -104,37 +96,59 @@ retriever = vector_store.as_retriever(search_type='similarity', k=3)
 
 qa_chain = RetrievalQA.from_chain_type(llm=llm, chain_type='stuff', retriever=retriever, return_source_documents=True, chain_type_kwargs={"prompt":prompt})
 
-"""**Step 5: testing the code**"""
+#"""**Step 5: testing the code**"""
 
-query = "how to download my prescription"
-result = qa_chain(query)
+#query = "how to download my prescription"
+#result = qa_chain(query)
 
-print("Answer:", result['result'])
-for doc in result['source_documents']:
-    print("\nSource:", doc.metadata["question"])
+#print("Answer:", result['result'])
+#for doc in result['source_documents']:
+#    print("\nSource:", doc.metadata["question"])
 
-queries = [
-    "What are your opening hours?",
-    "Do you offer international shipping?",
-    "Can I cancel my order after purchase?",
-    "Where is your returns policy?"
-]
+#queries = [
+#    "What are your opening hours?",
+#    "Do you offer international shipping?",
+#    "Can I cancel my order after purchase?",
+#    "Where is your returns policy?"
+#]
 
-for q in queries:
-    result = qa_chain(q)
-    print(f"\nQ: {q}\nA: {result['result']}")
+#for q in queries:
+#    result = qa_chain(q)
+#    print(f"\nQ: {q}\nA: {result['result']}")
 
 
 # ---- Streamlit UI ----
-st.title("💬 Chat with Your Docs")
+import streamlit as st
 
-query = st.text_input("Ask your question:")
+# ---- Streamlit Chat UI ----
+st.title("💬 Welcome to the Clinic's Chatbot")
+
+# Initialize chat history
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []
+
+# User input
+query = st.chat_input("Ask your question:")
 
 if query:
-    with st.spinner("Thinking..."):
-        result = qa_chain(query)
-        st.write("**Answer:**", result['result'])
+    # Append user message
+    st.session_state.chat_history.append({"role": "user", "content": query})
 
-        with st.expander("Source Documents"):
-            for i, doc in enumerate(result["source_documents"]):
-                st.markdown(f"**Source {i+1}**:\n{doc.page_content}")
+    with st.spinner("Thinking..."):
+        # Get response from your QA chain
+        result = qa_chain(query)
+
+        # Append bot response
+        st.session_state.chat_history.append({"role": "assistant", "content": result['result'], "sources": result["source_documents"]})
+
+# Display the chat
+for msg in st.session_state.chat_history:
+    if msg["role"] == "user":
+        with st.chat_message("user"):
+            st.markdown(msg["content"])
+    else:
+        with st.chat_message("assistant"):
+            st.markdown(f"**Answer:** {msg['content']}")
+            with st.expander("Source Documents"):
+                for i, doc in enumerate(msg["sources"]):
+                    st.markdown(f"**Source {i+1}**:\n{doc.page_content}")
